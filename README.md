@@ -11,10 +11,10 @@ One sample code is taken from the moveit tutorial package, other one is custom, 
 
 **How to test on real robot:**
 
-'''
+```
 roslaunch panda_moveit_config franka_control.launch robot_ip:=<franka_ip>
-'''
+```
 
-'''
+```
 rosrun panda_moveit_config example_control.py
-'''
+```
