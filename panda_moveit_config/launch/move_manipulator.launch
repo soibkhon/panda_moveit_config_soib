@@ -1,0 +1,7 @@
+<launch>
+  <!-- Start the MoveIt nodes -->
+  <node name="move_group" pkg="moveit_ros_move_group" type="move_group" output="screen" />
+
+  <!-- Run the Python script -->
+  <node name="move_manipulator" pkg="your_package_name" type="move_manipulator.py" output="screen" />
+</launch>
