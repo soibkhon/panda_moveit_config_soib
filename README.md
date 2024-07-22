@@ -3,6 +3,6 @@ Panda moveit config created by Moveit! setup assistant, with written controllers
 
 **Ubuntu 20.04**
 
-**ROS Noetic
-Franka FCI 4.2.1, libfranka 0.8.0**
+**ROS Noetic**
+**Franka FCI 4.2.1, libfranka 0.8.0**
 
