@@ -4,8 +4,7 @@ from __future__ import print_function
 import sys
 import rospy
 import moveit_commander
-import geometry_msgs.msg
-import math
+from robotiq_2f_gripper_control.msg import _Robotiq2FGripper_robot_output as outputMsg
 
 class SimpleMove:
     def __init__(self):
@@ -15,45 +14,66 @@ class SimpleMove:
         self.robot = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
         self.move_group = moveit_commander.MoveGroupCommander("panda_arm")
-        self.move_group.set_max_velocity_scaling_factor(0.1)  # Adjust for smoother motion
-        self.move_group.set_max_acceleration_scaling_factor(0.1)  # Adjust for smoother motion
+        self.gripper_pub = rospy.Publisher("Robotiq2FGripperRobotOutput", outputMsg.Robotiq2FGripper_robot_output, queue_size=10)
+        rospy.sleep(2)  # Allow some time for initialization
 
-    def circular_motion(self, radius, num_waypoints):
+    def move_joints(self, joint_goals):
         move_group = self.move_group
-        waypoints = []
 
-        current_pose = move_group.get_current_pose().pose
-        center_x = current_pose.position.x
-        center_y = current_pose.position.y
+        move_group.set_joint_value_target(joint_goals)
+        success = move_group.go(wait=True)
+        move_group.stop()
+        move_group.clear_pose_targets()
 
-        for i in range(num_waypoints + 1):
-            theta = 2 * math.pi * i / num_waypoints
-            x = center_x + radius * math.cos(theta)
-            y = center_y + radius * math.sin(theta)
+        return success
+    
+    def create_command(self, open_gripper):
+        """Create a command to open or close the gripper."""
+        command = outputMsg.Robotiq2FGripper_robot_output()
+        command.rACT = 1
+        command.rGTO = 1
+        command.rSP = 255
+        command.rFR = 150
+        command.rPR = 0 if open_gripper else 255
+        return command
 
-            pose_goal = geometry_msgs.msg.Pose()
-            pose_goal.orientation = current_pose.orientation  # Keep the orientation constant
-            pose_goal.position.x = x
-            pose_goal.position.y = y
-            pose_goal.position.z = current_pose.position.z
-            waypoints.append(pose_goal)
-
-        (plan, fraction) = move_group.compute_cartesian_path(
-            waypoints,   # waypoints to follow
-            0.01,        # eef_step
-            0.0)         # jump_threshold
-
-        plan = move_group.retime_trajectory(self.robot.get_current_state(), plan, velocity_scaling_factor=0.5, acceleration_scaling_factor=0.5)
-        move_group.execute(plan, wait=True)
+    def control_gripper(self, open_gripper):
+        """Control the gripper to open or close."""
+        command = self.create_command(open_gripper)
+        self.gripper_pub.publish(command)
+        rospy.sleep(1)  # Allow time for the gripper to move
 
 def main():
     try:
         sm = SimpleMove()
-        radius = 0.1  # Radius of the circle in meters
-        num_waypoints = 300  # Number of waypoints to generate
-        sm.circular_motion(radius, num_waypoints)  # Execute circular motion
+
+        # Define the target joint values (in radians)
+        joint_goals = [-0.632, -0.127, 0.425, -2.691, 0.105, 2.577, 0.497]
+
+        # Move joints to the specified angles
+        sm.move_joints(joint_goals)
+
+        # Close the gripper
+        sm.control_gripper(False)
+
+        # Move joints back to another set of specified angles
+        joint_goals = [1.568, 0.139, -1.497, -1.675, 0.754, 2.218, 0.608]
+        sm.move_joints(joint_goals)
+
+        # Open the gripper
+        sm.control_gripper(True)
+
     except rospy.ROSInterruptException:
         pass
+
+def set_cartesian_impedance(self, stiffness_values, damping_values):
+    set_cartesian_impedance_service = rospy.ServiceProxy('/panda_arm/cartesian_impedance_controller/set_cartesian_impedance', SetCartesianImpedance)
+    request = SetCartesianImpedanceRequest()
+    request.stiffness.linear.x, request.stiffness.linear.y, request.stiffness.linear.z = stiffness_values[:3]
+    request.stiffness.angular.x, request.stiffness.angular.y, request.stiffness.angular.z = stiffness_values[3:]
+    request.damping.linear.x, request.damping.linear.y, request.damping.linear.z = damping_values[:3]
+    request.damping.angular.x, request.damping.angular.y, request.damping.angular.z = damping_values[3:]
+    set_cartesian_impedance_service(request)
 
 if __name__ == '__main__':
     main()

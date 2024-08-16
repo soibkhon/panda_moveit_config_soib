@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="robot_ip" />
+  <arg name="load_gripper" />
+
+  <!-- Launch the franka_control with impedance controller -->
+  <include file="$(find franka_control)/launch/franka_control.launch">
+    <arg name="robot_ip" value="$(arg robot_ip)" />
+    <arg name="load_gripper" value="$(arg load_gripper)" />
+  </include>
+
+  <!-- Load the impedance controller -->
+  <rosparam command="load" file="$(find panda_moveit_config)/config/ros_controllers.yaml"/>
+
+  <!-- Start the Cartesian impedance controller -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen"
+        args="cartesian_impedance_controller" />
+
+  <!-- Include MoveIt demo -->
+  <include file="$(dirname)/demo.launch" pass_all_args="true">
+    <arg name="load_robot_description" value="false" />
+    <arg name="moveit_controller_manager" value="simple" />
+  </include>
+
+  <!-- Launch the Python scripts -->
+  <node name="robotiq_gripper" pkg="robotiq_2f_gripper_control" type="Robotiq2FGripperRtuNode.py" args="/dev/ttyUSB1" output="screen" />
+  <node name="move_by_x" pkg="panda_moveit_config" type="move_by_x.py" output="screen">
+    <param name="script" value="$(find panda_moveit_config)/scripts/move_by_x.py" />
+  </node>
+
+</launch>

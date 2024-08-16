@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+
+  
+  <param name="robot_description" command="$(find xacro)/xacro --inorder $(find franka_description)/robots/panda/robotiq_mounted_on_panda.urdf.xacro" />
+
+  <include file="$(dirname)/moveit_rviz.launch">
+    <arg name="rviz_config" value="$(dirname)/moveit_robotiq.rviz"/>
+  </include>
+  
+
+</launch>
